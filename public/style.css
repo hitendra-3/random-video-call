@@ -1,109 +1,156 @@
-/* style.css */
-
-:root {
-    --primary-color: #1E1E2E;
-    --secondary-color: #25273D;
-    --accent-color: #4A90E2;
-    --text-color: #FFFFFF;
-    --button-hover: #3A78C2;
-    --dark-bg: #121212;
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
-    background: var(--primary-color);
-    color: var(--text-color);
+    background: #f4f4f4;
+    color: #333;
     text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+    transition: background 0.3s, color 0.3s;
 }
 
+/* Dark Mode Styles */
+.dark-mode {
+    background: #121212;
+    color: #fff;
+}
+
+/* Container */
 .container {
-    background: var(--secondary-color);
+    width: 80%;
+    max-width: 1000px;
+    margin: 20px auto;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    max-width: 600px;
-    width: 100%;
+    background: white;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s;
 }
 
-h1 {
-    margin-bottom: 15px;
+.dark-mode .container {
+    background: #1e1e1e;
+    box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
 }
 
-button {
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    margin: 5px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: 0.3s;
-}
-
-button:hover {
-    background: var(--button-hover);
-}
-
+/* Video Containers */
 .video-container {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 10px;
     margin-top: 20px;
 }
 
 video {
-    width: 45%;
+    width: 48%;
     border-radius: 10px;
-    border: 2px solid var(--accent-color);
+    border: 3px solid #007bff;
+    transition: border 0.3s;
 }
 
-.chat-container {
-    background: var(--dark-bg);
-    padding: 10px;
-    border-radius: 8px;
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    height: 200px;
+.dark-mode video {
+    border-color: #00c3ff;
 }
 
-#chatBox {
-    flex-grow: 1;
-    overflow-y: auto;
-    text-align: left;
-    padding: 10px;
-    border-bottom: 1px solid var(--accent-color);
-}
-
-input[type="text"] {
-    width: 75%;
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
-}
-
-#sendChat {
-    width: 20%;
-}
-
-/* Dark Mode */
-.dark-mode {
-    background: black;
+/* Buttons */
+button {
+    background: #007bff;
     color: white;
+    border: none;
+    padding: 12px 18px;
+    font-size: 16px;
+    border-radius: 5px;
+    margin: 5px;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
-.dark-mode .container {
-    background: #1C1C2E;
+button:hover {
+    background: #0056b3;
 }
 
 .dark-mode button {
-    background: #FF4081;
+    background: #00c3ff;
 }
 
 .dark-mode button:hover {
-    background: #E60073;
+    background: #008ecc;
+}
+
+/* Chat Box */
+#chatBox {
+    width: 100%;
+    max-width: 600px;
+    height: 200px;
+    margin: 20px auto;
+    padding: 10px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    border-left: 5px solid #007bff;
+}
+
+.dark-mode #chatBox {
+    background: #222;
+    border-left-color: #00c3ff;
+}
+
+/* Chat Input */
+.chat-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#chatInput {
+    width: 70%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    transition: 0.3s;
+}
+
+.dark-mode #chatInput {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+}
+
+/* Timer */
+#callTimer {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #007bff;
+}
+
+.dark-mode #callTimer {
+    color: #00c3ff;
+}
+
+/* User Count */
+#userCount {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .video-container {
+        flex-direction: column;
+    }
+
+    video {
+        width: 100%;
+    }
+
+    #chatInput {
+        width: 60%;
+    }
 }

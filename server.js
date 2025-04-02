@@ -6,15 +6,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: "*", // Allow all origins for testing; adjust for production
         methods: ["GET", "POST"]
     },
     pingInterval: 10000,
     pingTimeout: 5000
 });
 
-// Serve static files (Ensure your HTML, CSS, JS are inside 'public' folder)
-app.use(express.static("public"));
+app.use(express.static("public")); // Serve static files from "public" folder
 
 let waitingUsers = [];
 let activePairs = new Map();
@@ -23,10 +22,10 @@ io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
     io.emit("updateUserCount", io.engine.clientsCount);
 
-    // User joins the queue
+    // Handle user joining the queue
     socket.on("join", () => {
         if (waitingUsers.length > 0) {
-            let partnerId = waitingUsers.shift(); // Match with first waiting user
+            let partnerId = waitingUsers.shift(); // Pair with waiting user
             activePairs.set(socket.id, partnerId);
             activePairs.set(partnerId, socket.id);
 
@@ -44,7 +43,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Handle WebRTC signaling (Offer, Answer, ICE Candidates)
+    // Handle WebRTC signaling
     socket.on("offer", ({ target, offer }) => {
         io.to(target).emit("offer", { sender: socket.id, offer });
     });
@@ -57,7 +56,7 @@ io.on("connection", (socket) => {
         io.to(target).emit("iceCandidate", { candidate });
     });
 
-    // Handle user leaving
+    // Handle user leaving the call
     socket.on("leave", () => {
         let partnerId = activePairs.get(socket.id);
         if (partnerId) {
@@ -84,8 +83,7 @@ io.on("connection", (socket) => {
     });
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
