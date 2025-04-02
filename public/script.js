@@ -1,13 +1,13 @@
-// script.js
 const socket = io({
     reconnection: true,
-    reconnectionAttempts: 10, // Retry 10 times before giving up
-    reconnectionDelay: 1000, // Wait 1 second between attempts
-    reconnectionDelayMax: 5000 // Max wait time of 5 seconds
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000
 });
 
 let localStream, peerConnection, partnerSocketId = null;
 let callTimer, callStartTime;
+
 const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 // Dark mode persistence
@@ -73,6 +73,7 @@ socket.on('connect_error', () => {
     console.log("Reconnecting...");
 });
 
+// 📌 Append messages in chatbox
 function appendMessage(msg) {
     let chatBox = document.getElementById('chatBox');
     let p = document.createElement('p');
@@ -81,6 +82,7 @@ function appendMessage(msg) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// 📌 Start Call Timer
 function startCallTimer() {
     callStartTime = Date.now();
     callTimer = setInterval(() => {
@@ -91,6 +93,7 @@ function startCallTimer() {
     }, 1000);
 }
 
+// 📌 Cleanup Function
 function cleanup() {
     if (peerConnection) {
         peerConnection.close();
@@ -105,3 +108,63 @@ function cleanup() {
     clearInterval(callTimer);
     document.getElementById('callTimer').innerText = "Call Duration: 00:00";
 }
+
+// 📌 Create Peer Connection & Handle Tracks
+function createPeerConnection() {
+    peerConnection = new RTCPeerConnection(config);
+
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            socket.emit("iceCandidate", { target: partnerSocketId, candidate: event.candidate });
+        }
+    };
+
+    peerConnection.ontrack = event => {
+        console.log("Receiving remote video stream");
+        document.getElementById('remoteVideo').srcObject = event.streams[0]; // Show partner video
+    };
+
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+}
+
+// 📌 Create Offer (Caller)
+async function makeOffer() {
+    try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit("offer", { target: partnerSocketId, offer });
+    } catch (error) {
+        console.error("Error creating offer:", error);
+    }
+}
+
+// 📌 Handle Incoming Offer (Receiver)
+socket.on("offer", async ({ offer, sender }) => {
+    try {
+        partnerSocketId = sender;
+        createPeerConnection();
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit("answer", { target: partnerSocketId, answer });
+    } catch (error) {
+        console.error("Error handling offer:", error);
+    }
+});
+
+// 📌 Handle Incoming Answer
+socket.on("answer", async ({ answer }) => {
+    try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    } catch (error) {
+        console.error("Error setting remote description:", error);
+    }
+});
+
+// 📌 Handle ICE Candidates
+socket.on("iceCandidate", ({ candidate }) => {
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+});
