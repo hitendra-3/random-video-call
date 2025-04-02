@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Video Call</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Random Video Call</h1>
+        <p id="userCount">Online Users: 0</p>
+        <button id="startCall">Start Video Call</button>
+        <button id="stopCall">Stop Video Call</button>
+        <button id="toggleDarkMode">Dark Mode</button>
+        <p id="callTimer">Call Duration: 00:00</p>
+        <div class="video-container">
+            <video id="localVideo" autoplay muted></video>
+            <video id="remoteVideo" autoplay></video>
+        </div>
+        <div class="chat-container">
+            <div id="chatBox"></div>
+            <input type="text" id="chatInput" placeholder="Type a message...">
+            <button id="sendChat">Send</button>
+        </div>
+        <div id="chartContainer">Call Stats will be displayed here.</div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
