@@ -7,7 +7,6 @@ const socket = io({
 
 let localStream, peerConnection, partnerSocketId = null;
 let callTimer, callStartTime;
-
 const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 // Dark mode persistence
@@ -19,6 +18,7 @@ document.getElementById('toggleDarkMode').onclick = () => {
     localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
 };
 
+// Start Call
 document.getElementById('startCall').onclick = async () => {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -29,6 +29,7 @@ document.getElementById('startCall').onclick = async () => {
     }
 };
 
+// Stop Call
 document.getElementById('stopCall').onclick = () => {
     if (confirm("Are you sure you want to leave the call?")) {
         cleanup();
@@ -36,6 +37,7 @@ document.getElementById('stopCall').onclick = () => {
     }
 };
 
+// Send Chat Message
 document.getElementById('sendChat').onclick = () => {
     let message = document.getElementById('chatInput').value;
     if (message.trim()) {
@@ -45,10 +47,12 @@ document.getElementById('sendChat').onclick = () => {
     }
 };
 
+// Update User Count
 socket.on('updateUserCount', (count) => {
     document.getElementById('userCount').innerText = `Online Users: ${count}`;
 });
 
+// Handle Call Readiness
 socket.on('ready', (partnerId) => {
     partnerSocketId = partnerId;
     createPeerConnection();
@@ -56,15 +60,18 @@ socket.on('ready', (partnerId) => {
     startCallTimer();
 });
 
+// Receive Chat Message
 socket.on('chatMessage', ({ message }) => {
     appendMessage("Partner: " + message);
 });
 
+// Partner Left
 socket.on('partnerLeft', () => {
     alert("Your partner has left the call.");
     cleanup();
 });
 
+// Handle Disconnection
 socket.on('disconnect', () => {
     console.log("Disconnected. Attempting to reconnect...");
 });
@@ -73,7 +80,7 @@ socket.on('connect_error', () => {
     console.log("Reconnecting...");
 });
 
-// 📌 Append messages in chatbox
+// Append messages in chatbox
 function appendMessage(msg) {
     let chatBox = document.getElementById('chatBox');
     let p = document.createElement('p');
@@ -82,7 +89,7 @@ function appendMessage(msg) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 📌 Start Call Timer
+// Start Call Timer
 function startCallTimer() {
     callStartTime = Date.now();
     callTimer = setInterval(() => {
@@ -93,7 +100,7 @@ function startCallTimer() {
     }, 1000);
 }
 
-// 📌 Cleanup Function
+// Cleanup Function
 function cleanup() {
     if (peerConnection) {
         peerConnection.close();
@@ -109,7 +116,7 @@ function cleanup() {
     document.getElementById('callTimer').innerText = "Call Duration: 00:00";
 }
 
-// 📌 Create Peer Connection & Handle Tracks
+// Create Peer Connection & Handle Tracks
 function createPeerConnection() {
     peerConnection = new RTCPeerConnection(config);
 
@@ -121,15 +128,17 @@ function createPeerConnection() {
 
     peerConnection.ontrack = event => {
         console.log("Receiving remote video stream");
-        document.getElementById('remoteVideo').srcObject = event.streams[0]; // Show partner video
+        if (event.streams.length > 0) {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+        }
     };
 
-    localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-    });
+    if (localStream) {
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+    }
 }
 
-// 📌 Create Offer (Caller)
+// Create Offer (Caller)
 async function makeOffer() {
     try {
         const offer = await peerConnection.createOffer();
@@ -140,7 +149,7 @@ async function makeOffer() {
     }
 }
 
-// 📌 Handle Incoming Offer (Receiver)
+// Handle Incoming Offer (Receiver)
 socket.on("offer", async ({ offer, sender }) => {
     try {
         partnerSocketId = sender;
@@ -155,7 +164,7 @@ socket.on("offer", async ({ offer, sender }) => {
     }
 });
 
-// 📌 Handle Incoming Answer
+// Handle Incoming Answer
 socket.on("answer", async ({ answer }) => {
     try {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
@@ -164,7 +173,11 @@ socket.on("answer", async ({ answer }) => {
     }
 });
 
-// 📌 Handle ICE Candidates
+// Handle ICE Candidates
 socket.on("iceCandidate", ({ candidate }) => {
-    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    if (candidate) {
+        peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
+            console.error("Error adding ICE candidate:", error);
+        });
+    }
 });
