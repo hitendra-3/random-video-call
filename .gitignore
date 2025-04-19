@@ -1,2 +1,29 @@
+# Ignore node modules
 node_modules/
-package-lock.json
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Dependency directories
+.pnp/
+.pnp.js
+
+# IDE / Editor settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Ignore environment variables
+.env
+
+# Ignore package-lock backup
+.package-lock.json

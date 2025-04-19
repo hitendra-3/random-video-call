@@ -1,97 +1,125 @@
-const socket = io(); // Connect to server
+const socket = io();
 
-let localStream, peerConnection, partnerSocketId = null;
-let callTimer, callStartTime;
-const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+let localStream;
+let peerConnection;
+let partnerSocketId = null;
 
-// Dark Mode Persistence
-if (localStorage.getItem("darkMode") === "enabled") {
-    document.body.classList.add("dark-mode");
-}
-document.getElementById("toggleDarkMode").onclick = () => {
-    document.body.classList.toggle("dark-mode");
-    localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+const config = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" }
+  ]
 };
+
+// Elements
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+const onlineUsers = document.getElementById('onlineUsers');
+const startCallBtn = document.getElementById('startCall');
+const endCallBtn = document.getElementById('endCall');
 
 // Start Call
-document.getElementById("startCall").onclick = async () => {
+startCallBtn.onclick = async () => {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+    socket.emit('join');
+    startCallBtn.disabled = true;  // Disable start call button while waiting
+    alert('Waiting for another user to join...');
+  } catch (err) {
+    console.error('Error accessing media devices:', err);
+    alert('Could not access camera/mic. Please check permissions or device connection.');
+  }
+};
+
+// Ready to start call (from the server)
+socket.on('ready', (partnerId) => {
+  partnerSocketId = partnerId;
+  createPeerConnection();
+  if (socket.id < partnerSocketId) {
+    makeOffer();  // Only the first user sends the offer
+  }
+});
+
+// Handle Offer
+socket.on('offer', async (offer) => {
+  createPeerConnection();
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+  socket.emit('answer', answer);
+});
+
+// Handle Answer
+socket.on('answer', async (answer) => {
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+// Handle ICE Candidate
+socket.on('candidate', async (candidate) => {
+  if (peerConnection) {
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById("localVideo").srcObject = localStream;
-        socket.emit("join");
-    } catch (error) {
-        console.error("Error accessing media devices:", error);
+      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (e) {
+      console.error('Error adding ICE candidate', e);
     }
-};
-
-// Stop Call
-document.getElementById("stopCall").onclick = () => {
-    if (confirm("Are you sure you want to leave the call?")) {
-        cleanup();
-        socket.emit("leave", partnerSocketId);
-    }
-};
-
-// Send Chat Message
-document.getElementById("sendChat").onclick = () => {
-    let message = document.getElementById("chatInput").value;
-    if (message.trim() && partnerSocketId) {
-        socket.emit("chatMessage", { target: partnerSocketId, message });
-        appendMessage("You: " + message);
-        document.getElementById("chatInput").value = "";
-    }
-};
-
-// Handle Socket Events
-socket.on("updateUserCount", (count) => {
-    document.getElementById("userCount").innerText = `Online Users: ${count}`;
+  }
 });
 
-socket.on("ready", (partnerId) => {
-    partnerSocketId = partnerId;
-    createPeerConnection();
-    makeOffer();
-    startCallTimer();
+// ✅ Online user count update
+socket.on('onlineCount', (count) => {
+  onlineUsers.innerText = `Online Users: ${count}`;
 });
 
-socket.on("chatMessage", ({ message }) => appendMessage("Partner: " + message));
-
-socket.on("partnerLeft", () => {
-    alert("Your partner has left the call.");
-    cleanup();
-});
-
-// Append messages in chatbox
-function appendMessage(msg) {
-    let chatBox = document.getElementById("chatBox");
-    let p = document.createElement("p");
-    p.innerText = msg;
-    chatBox.appendChild(p);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// WebRTC Setup
+// Create Peer Connection
 function createPeerConnection() {
-    peerConnection = new RTCPeerConnection(config);
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) socket.emit("iceCandidate", { target: partnerSocketId, candidate: event.candidate });
-    };
-    peerConnection.ontrack = event => {
-        document.getElementById("remoteVideo").srcObject = event.streams[0];
-    };
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  peerConnection = new RTCPeerConnection(config);
+
+  // Add local tracks to the peer connection
+  localStream.getTracks().forEach(track => {
+    peerConnection.addTrack(track, localStream);
+  });
+
+  // Handle ICE candidates
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit('candidate', event.candidate);
+    }
+  };
+
+  // Handle remote tracks
+  peerConnection.ontrack = (event) => {
+    remoteVideo.srcObject = event.streams[0];
+  };
+
+  // Monitor connection state
+  peerConnection.oniceconnectionstatechange = () => {
+    if (peerConnection.iceConnectionState === 'failed') {
+      alert('Connection failed, please try again!');
+      endCall();
+    }
+  };
 }
 
+// Make an offer to start the call
 async function makeOffer() {
-    let offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.emit("offer", { target: partnerSocketId, offer });
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+  socket.emit('offer', offer);
 }
 
-// Cleanup
-function cleanup() {
-    if (peerConnection) peerConnection.close();
-    if (localStream) localStream.getTracks().forEach(track => track.stop());
-    document.getElementById("remoteVideo").srcObject = null;
-    document.getElementById("localVideo").srcObject = null;
+// End Call
+endCallBtn.onclick = () => {
+  endCall();
+};
+
+function endCall() {
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+    remoteVideo.srcObject = null;
+
+    // Stop all tracks (media devices)
+    localStream.getTracks().forEach(track => track.stop());
+    startCallBtn.disabled = false;  // Re-enable start call button
+  }
 }
