@@ -14,7 +14,7 @@
       });
     }
 
-    const socket = io(); // connects to same origin where page loaded
+    const socket = io("https://random-video-call-wqh5.onrender.com/"); // connects to same origin where page loaded
 
     let localStream = null;
     let peerConnection = null;
