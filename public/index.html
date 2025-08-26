@@ -3,22 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Real Time Video Call</title>
+  <title>ConnectMe - Modern Video Chat</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+  <div class="background-animation">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    <div class="shape shape-4"></div>
+  </div>
+
   <div class="container">
-    <h1>Video Chat App</h1>
-    <div id="onlineUsers" class="online-count">Online Users: 0</div>
+    <header class="app-header">
+      <div class="logo">
+        <i class="fas fa-video"></i>
+        <h1>ConnectMe</h1>
+      </div>
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span id="onlineUsers" class="online-count">Online: 0</span>
+      </div>
+    </header>
 
-    <div class="video-section">
-      <video id="localVideo" autoplay muted></video>
-      <video id="remoteVideo" autoplay></video>
-    </div>
+    <main class="main-content">
+      <section class="video-section">
+        <div class="video-container local-video-container">
+          <video id="localVideo" autoplay muted></video>
+          <div class="video-overlay">
+            <span class="user-name">You</span>
+            <div class="video-controls">
+              <button class="control-btn mic-btn active">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button class="control-btn cam-btn active">
+                <i class="fas fa-video"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="video-container remote-video-container">
+          <video id="remoteVideo" autoplay></video>
+          <div class="video-overlay waiting-partner">
+            <i class="fas fa-user-friends"></i>
+            <p>Waiting for partner to join...</p>
+          </div>
+          <div class="video-overlay partner-info hidden">
+            <span class="user-name">Partner</span>
+          </div>
+        </div>
+      </section>
 
-    <div class="buttons">
-      <button id="startCall">Start Call</button>
-      <button id="endCall">End Call</button>
+      <section class="controls-section">
+        <div class="primary-controls">
+          <button id="startCall" class="btn-primary">
+            <i class="fas fa-phone-alt"></i>
+            Start Call
+          </button>
+          <button id="endCall" class="btn-danger" disabled>
+            <i class="fas fa-phone-slash"></i>
+            End Call
+          </button>
+        </div>
+        
+        <div class="secondary-controls">
+          <button class="btn-secondary" id="toggleChat">
+            <i class="fas fa-comment"></i>
+            Chat
+          </button>
+          <button class="btn-secondary" id="settingsBtn">
+            <i class="fas fa-cog"></i>
+            Settings
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <aside class="chat-panel hidden">
+      <div class="chat-header">
+        <h3>Chat</h3>
+        <button class="close-chat" id="closeChat">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <!-- Messages will appear here -->
+      </div>
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendMessage">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </aside>
+
+    <div class="notification-toast hidden" id="notificationToast">
+      <span id="toastMessage"></span>
     </div>
   </div>
 
