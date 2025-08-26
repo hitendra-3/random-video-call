@@ -14,7 +14,7 @@ if (TURN_URL && TURN_USERNAME && TURN_CREDENTIAL) {
   });
 }
 
-const socket = io("https://random-video-call-wqh5.onrender.com/");
+const socket = io("https://random-video-call-wqh5.onrender.com");
 
 let localStream = null;
 let peerConnection = null;
